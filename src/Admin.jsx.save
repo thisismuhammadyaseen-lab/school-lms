@@ -1,0 +1,2941 @@
+mysql -u root -p -e "USE school_lms; DESCRIBE results;"import "./Admin.css";
+
+const API = "http://localhost:5000";
+
+function Admin({ onLogout }) {
+  const [activeTab, setActiveTab] = useState("Dashboard");
+  const [message, setMessage] = useState("");
+
+  // =========================
+  // DATA
+  // =========================
+
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [results, setResults] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+
+  // =========================
+  // SEARCH
+  // =========================
+
+  const [searchStudent, setSearchStudent] = useState("");
+  const [searchTeacher, setSearchTeacher] = useState("");
+  const [searchAssignment, setSearchAssignment] = useState("");
+  const [searchResult, setSearchResult] = useState("");
+  const [searchAttendance, setSearchAttendance] = useState("");
+  const [searchAnnouncement, setSearchAnnouncement] =
+    useState("");
+
+  // =========================
+  // STUDENT
+  // =========================
+
+  const [showStudentForm, setShowStudentForm] =
+    useState(false);
+
+  const [editingStudent, setEditingStudent] =
+    useState(null);
+
+  const [studentForm, setStudentForm] = useState({
+    name: "",
+    father_name: "",
+    class_name: "",
+    roll_number: "",
+    student_code: "",
+    phone: "",
+  });
+
+  // =========================
+  // TEACHER
+  // =========================
+
+  const [showTeacherForm, setShowTeacherForm] =
+    useState(false);
+
+  const [editingTeacher, setEditingTeacher] =
+    useState(null);
+
+  const [teacherForm, setTeacherForm] = useState({
+    name: "",
+    subject: "",
+    phone: "",
+  });
+
+  // =========================
+  // ASSIGNMENT
+  // =========================
+
+  const [showAssignmentForm, setShowAssignmentForm] =
+    useState(false);
+
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: "",
+    subject: "",
+    description: "",
+    due_date: "",
+    student_id: "",
+  });
+
+  const [assignmentFile, setAssignmentFile] =
+    useState(null);
+
+  // =========================
+  // RESULT
+  // =========================
+
+  const [showResultForm, setShowResultForm] =
+    useState(false);
+
+  const [editingResult, setEditingResult] =
+    useState(null);
+
+  const [resultForm, setResultForm] = useState({
+    student_id: "",
+    subject: "",
+    marks: "",
+    total_marks: "100",
+    grade: "",
+  });
+
+  // =========================
+  // ATTENDANCE
+  // =========================
+
+  const [showAttendanceForm, setShowAttendanceForm] =
+    useState(false);
+
+  const [editingAttendance, setEditingAttendance] =
+    useState(null);
+
+  const [attendanceForm, setAttendanceForm] = useState({
+    student_id: "",
+    attendance_date: "",
+    status: "Present",
+  });
+
+  // =========================
+  // ANNOUNCEMENT
+  // =========================
+
+  const [showAnnouncementForm, setShowAnnouncementForm] =
+    useState(false);
+
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState(null);
+
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: "",
+    message: "",
+  });
+
+  // =====================================================
+  // LOAD ALL DATA
+  // =====================================================
+
+  const loadStudents = async () => {
+    try {
+      const response = await fetch(`${API}/students`);
+      const data = await response.json();
+
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Students error:", error);
+      setStudents([]);
+    }
+  };
+
+  const loadTeachers = async () => {
+    try {
+      const response = await fetch(`${API}/teachers`);
+      const data = await response.json();
+
+      setTeachers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Teachers error:", error);
+      setTeachers([]);
+    }
+  };
+
+  const loadAssignments = async () => {
+    try {
+      const response = await fetch(`${API}/assignments`);
+      const data = await response.json();
+
+      setAssignments(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Assignments error:", error);
+      setAssignments([]);
+    }
+  };
+
+  const loadResults = async () => {
+    try {
+      const response = await fetch(`${API}/results`);
+      const data = await response.json();
+
+      setResults(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Results error:", error);
+      setResults([]);
+    }
+  };
+
+  const loadAttendance = async () => {
+    try {
+      const response = await fetch(`${API}/attendance`);
+      const data = await response.json();
+
+      setAttendance(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Attendance error:", error);
+      setAttendance([]);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      const response = await fetch(`${API}/announcements`);
+      const data = await response.json();
+
+      setAnnouncements(
+        Array.isArray(data) ? data : []
+      );
+    } catch (error) {
+      console.error("Announcements error:", error);
+      setAnnouncements([]);
+    }
+  };
+
+  useEffect(() => {
+    loadStudents();
+    loadTeachers();
+    loadAssignments();
+    loadResults();
+    loadAttendance();
+    loadAnnouncements();
+  }, []);
+
+  // =====================================================
+  // MESSAGE
+  // =====================================================
+
+  const showMessage = (text) => {
+    setMessage(text);
+
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  };
+
+  // =====================================================
+  // STUDENT FUNCTIONS
+  // =====================================================
+
+  const openAddStudent = () => {
+    setEditingStudent(null);
+
+    setStudentForm({
+      name: "",
+      father_name: "",
+      class_name: "",
+      roll_number: "",
+      student_code: "",
+      phone: "",
+    });
+
+    setShowStudentForm(true);
+  };
+
+  const openEditStudent = (student) => {
+    setEditingStudent(student);
+
+    setStudentForm({
+      name: student.name || "",
+      father_name: student.father_name || "",
+      class_name: student.class_name || "",
+      roll_number: student.roll_number || "",
+      student_code: student.student_code || "",
+      phone: student.phone || "",
+    });
+
+    setShowStudentForm(true);
+  };
+
+  const saveStudent = async (e) => {
+    e.preventDefault();
+
+    try {
+      const url = editingStudent
+        ? `${API}/students/${editingStudent.id}`
+        : `${API}/students`;
+
+      const method = editingStudent ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(studentForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Student save failed."
+        );
+      }
+
+      showMessage(
+        editingStudent
+          ? "Student updated successfully."
+          : "Student added successfully."
+      );
+
+      setShowStudentForm(false);
+      setEditingStudent(null);
+
+      loadStudents();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteStudent = async (id) => {
+    if (!window.confirm("Delete this student?")) return;
+
+    try {
+      const response = await fetch(
+        `${API}/students/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Delete failed."
+        );
+      }
+
+      showMessage("Student deleted successfully.");
+
+      loadStudents();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // TEACHER FUNCTIONS
+  // =====================================================
+
+  const openAddTeacher = () => {
+    setEditingTeacher(null);
+
+    setTeacherForm({
+      name: "",
+      subject: "",
+      phone: "",
+    });
+
+    setShowTeacherForm(true);
+  };
+
+  const openEditTeacher = (teacher) => {
+    setEditingTeacher(teacher);
+
+    setTeacherForm({
+      name: teacher.name || "",
+      subject: teacher.subject || "",
+      phone: teacher.phone || "",
+    });
+
+    setShowTeacherForm(true);
+  };
+
+  const saveTeacher = async (e) => {
+    e.preventDefault();
+
+    try {
+      const url = editingTeacher
+        ? `${API}/teachers/${editingTeacher.id}`
+        : `${API}/teachers`;
+
+      const method = editingTeacher ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(teacherForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Teacher save failed."
+        );
+      }
+
+      showMessage(
+        editingTeacher
+          ? "Teacher updated successfully."
+          : "Teacher added successfully."
+      );
+
+      setShowTeacherForm(false);
+      setEditingTeacher(null);
+
+      loadTeachers();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteTeacher = async (id) => {
+    if (!window.confirm("Delete this teacher?")) return;
+
+    try {
+      const response = await fetch(
+        `${API}/teachers/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Delete failed."
+        );
+      }
+
+      showMessage("Teacher deleted successfully.");
+
+      loadTeachers();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // ASSIGNMENT FUNCTIONS
+  // =====================================================
+
+  const openAddAssignment = () => {
+    setAssignmentForm({
+      title: "",
+      subject: "",
+      description: "",
+      due_date: "",
+      student_id: "",
+    });
+
+    setAssignmentFile(null);
+
+    setShowAssignmentForm(true);
+  };
+
+  const saveAssignment = async (e) => {
+    e.preventDefault();
+
+    try {
+      let uploadedFile = "";
+
+      if (assignmentFile) {
+        const formData = new FormData();
+
+        formData.append(
+          "file",
+          assignmentFile
+        );
+
+        const uploadResponse = await fetch(
+          `${API}/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const uploadData =
+          await uploadResponse.json();
+
+        if (!uploadResponse.ok) {
+          throw new Error(
+            uploadData.message ||
+              "File upload failed."
+          );
+        }
+
+        uploadedFile =
+          uploadData.filename ||
+          uploadData.file ||
+          "";
+      }
+
+      const response = await fetch(
+        `${API}/admin/assignments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...assignmentForm,
+            student_id: assignmentForm.student_id
+              ? Number(
+                  assignmentForm.student_id
+                )
+              : null,
+            file: uploadedFile,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Assignment save failed."
+        );
+      }
+
+      showMessage(
+        "Assignment added successfully."
+      );
+
+      setShowAssignmentForm(false);
+
+      loadAssignments();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteAssignment = async (id) => {
+    if (
+      !window.confirm(
+        "Delete this assignment?"
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `${API}/assignments/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Assignment delete failed."
+        );
+      }
+
+      showMessage(
+        "Assignment deleted successfully."
+      );
+
+      loadAssignments();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // RESULT FUNCTIONS
+  // =====================================================
+
+  const openAddResult = () => {
+    setEditingResult(null);
+
+    setResultForm({
+      student_id: "",
+      subject: "",
+      marks: "",
+      total_marks: "100",
+      grade: "",
+    });
+
+    setShowResultForm(true);
+  };
+
+  const openEditResult = (result) => {
+    setEditingResult(result);
+
+    setResultForm({
+      student_id: String(
+        result.student_id || ""
+      ),
+      subject: result.subject || "",
+      marks: result.marks || "",
+      total_marks:
+        result.total_marks || "100",
+      grade: result.grade || "",
+    });
+
+    setShowResultForm(true);
+  };
+
+  const saveResult = async (e) => {
+    e.preventDefault();
+
+    try {
+      const url = editingResult
+        ? `${API}/results/${editingResult.id}`
+        : `${API}/results`;
+
+      const method = editingResult
+        ? "PUT"
+        : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...resultForm,
+          student_id: Number(
+            resultForm.student_id
+          ),
+          marks: Number(resultForm.marks),
+          total_marks: Number(
+            resultForm.total_marks
+          ),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Result save failed."
+        );
+      }
+
+      showMessage(
+        editingResult
+          ? "Result updated successfully."
+          : "Result added successfully."
+      );
+
+      setShowResultForm(false);
+      setEditingResult(null);
+
+      loadResults();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteResult = async (id) => {
+    if (!window.confirm("Delete this result?"))
+      return;
+
+    try {
+      const response = await fetch(
+        `${API}/results/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Result delete failed."
+        );
+      }
+
+      showMessage(
+        "Result deleted successfully."
+      );
+
+      loadResults();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // ATTENDANCE FUNCTIONS
+  // =====================================================
+
+  const openAddAttendance = () => {
+    setEditingAttendance(null);
+
+    setAttendanceForm({
+      student_id: "",
+      attendance_date: new Date()
+        .toISOString()
+        .split("T")[0],
+      status: "Present",
+    });
+
+    setShowAttendanceForm(true);
+  };
+
+  const openEditAttendance = (item) => {
+    setEditingAttendance(item);
+
+    let date = item.attendance_date || "";
+
+    if (date.includes("T")) {
+      date = date.split("T")[0];
+    }
+
+    setAttendanceForm({
+      student_id: String(
+        item.student_id || ""
+      ),
+      attendance_date: date,
+      status: item.status || "Present",
+    });
+
+    setShowAttendanceForm(true);
+  };
+
+  const saveAttendance = async (e) => {
+    e.preventDefault();
+
+    if (!attendanceForm.student_id) {
+      showMessage("Please select a student.");
+      return;
+    }
+
+    if (!attendanceForm.attendance_date) {
+      showMessage("Please select a date.");
+      return;
+    }
+
+    try {
+      const url = editingAttendance
+        ? `${API}/attendance/${editingAttendance.id}`
+        : `${API}/attendance`;
+
+      const method = editingAttendance
+        ? "PUT"
+        : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          student_id: Number(
+            attendanceForm.student_id
+          ),
+          attendance_date:
+            attendanceForm.attendance_date,
+          status:
+            attendanceForm.status,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Attendance save failed."
+        );
+      }
+
+      showMessage(
+        editingAttendance
+          ? "Attendance updated successfully."
+          : "Attendance added successfully."
+      );
+
+      setShowAttendanceForm(false);
+      setEditingAttendance(null);
+
+      loadAttendance();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteAttendance = async (id) => {
+    if (
+      !window.confirm(
+        "Delete this attendance record?"
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `${API}/attendance/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Attendance delete failed."
+        );
+      }
+
+      showMessage(
+        "Attendance deleted successfully."
+      );
+
+      loadAttendance();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // ANNOUNCEMENT FUNCTIONS
+  // =====================================================
+
+  const openAddAnnouncement = () => {
+    setEditingAnnouncement(null);
+
+    setAnnouncementForm({
+      title: "",
+      message: "",
+    });
+
+    setShowAnnouncementForm(true);
+  };
+
+  const openEditAnnouncement = (
+    announcement
+  ) => {
+    setEditingAnnouncement(
+      announcement
+    );
+
+    setAnnouncementForm({
+      title: announcement.title || "",
+      message:
+        announcement.message || "",
+    });
+
+    setShowAnnouncementForm(true);
+  };
+
+  const saveAnnouncement = async (e) => {
+    e.preventDefault();
+
+    try {
+      const url = editingAnnouncement
+        ? `${API}/announcements/${editingAnnouncement.id}`
+        : `${API}/announcements`;
+
+      const method = editingAnnouncement
+        ? "PUT"
+        : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          announcementForm
+        ),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Announcement save failed."
+        );
+      }
+
+      showMessage(
+        editingAnnouncement
+          ? "Announcement updated successfully."
+          : "Announcement added successfully."
+      );
+
+      setShowAnnouncementForm(false);
+      setEditingAnnouncement(null);
+
+      loadAnnouncements();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  const deleteAnnouncement = async (id) => {
+    if (
+      !window.confirm(
+        "Delete this announcement?"
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `${API}/announcements/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Announcement delete failed."
+        );
+      }
+
+      showMessage(
+        "Announcement deleted successfully."
+      );
+
+      loadAnnouncements();
+    } catch (error) {
+      showMessage(error.message);
+    }
+  };
+
+  // =====================================================
+  // FILTERS
+  // =====================================================
+
+  const filteredStudents = useMemo(() => {
+    const q = searchStudent.toLowerCase();
+
+    return students.filter((student) =>
+      [
+        student.name,
+        student.father_name,
+        student.class_name,
+        student.roll_number,
+        student.student_code,
+        student.phone,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [students, searchStudent]);
+
+  const filteredTeachers = useMemo(() => {
+    const q = searchTeacher.toLowerCase();
+
+    return teachers.filter((teacher) =>
+      [
+        teacher.name,
+        teacher.subject,
+        teacher.phone,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [teachers, searchTeacher]);
+
+  const filteredAssignments = useMemo(() => {
+    const q = searchAssignment.toLowerCase();
+
+    return assignments.filter((item) =>
+      [
+        item.title,
+        item.subject,
+        item.description,
+        item.student_name,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [assignments, searchAssignment]);
+
+  const filteredResults = useMemo(() => {
+    const q = searchResult.toLowerCase();
+
+    return results.filter((item) =>
+      [
+        item.student_name,
+        item.subject,
+        item.grade,
+        item.marks,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [results, searchResult]);
+
+  const filteredAttendance = useMemo(() => {
+    const q = searchAttendance.toLowerCase();
+
+    return attendance.filter((item) =>
+      [
+        item.student_name,
+        item.class_name,
+        item.roll_number,
+        item.student_code,
+        item.status,
+        item.attendance_date,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [attendance, searchAttendance]);
+
+  const filteredAnnouncements = useMemo(() => {
+    const q =
+      searchAnnouncement.toLowerCase();
+
+    return announcements.filter((item) =>
+      [
+        item.title,
+        item.message,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [
+    announcements,
+    searchAnnouncement,
+  ]);
+
+  // =====================================================
+  // ATTENDANCE STATS
+  // =====================================================
+
+  const presentCount = attendance.filter(
+    (a) => a.status === "Present"
+  ).length;
+
+  const absentCount = attendance.filter(
+    (a) => a.status === "Absent"
+  ).length;
+
+  const lateCount = attendance.filter(
+    (a) => a.status === "Late"
+  ).length;
+
+  // =====================================================
+  // NAVIGATION
+  // =====================================================
+
+  const goTo = (tab) => {
+    setActiveTab(tab);
+    setMessage("");
+  };
+
+  // =====================================================
+  // UI
+  // =====================================================
+
+  return (
+    <div className="admin-container">
+
+      {/* SIDEBAR */}
+      <aside className="admin-sidebar">
+
+        <div className="admin-logo">
+          <div className="logo-icon">
+            🎓
+          </div>
+
+          <div>
+            <h2>Iqra Model</h2>
+            <p>School LMS</p>
+          </div>
+        </div>
+
+        <nav className="admin-nav">
+
+          {[
+            "Dashboard",
+            "Students",
+            "Teachers",
+            "Assignments",
+            "Results",
+            "Attendance",
+            "Announcements",
+          ].map((tab) => (
+            <button
+              key={tab}
+              className={
+                activeTab === tab
+                  ? "active"
+                  : ""
+              }
+              onClick={() => goTo(tab)}
+            >
+              {tab === "Dashboard" && "📊"}
+              {tab === "Students" && "👨‍🎓"}
+              {tab === "Teachers" && "👨‍🏫"}
+              {tab === "Assignments" && "📚"}
+              {tab === "Results" && "📈"}
+              {tab === "Attendance" && "📅"}
+              {tab === "Announcements" && "📢"}
+
+              <span>{tab}</span>
+            </button>
+          ))}
+
+        </nav>
+
+        <button
+          className="admin-logout"
+          onClick={onLogout}
+        >
+          🚪 Logout
+        </button>
+
+      </aside>
+
+      {/* MAIN */}
+      <main className="admin-main">
+
+        {/* HEADER */}
+        <header className="admin-header">
+
+          <div>
+            <h1>
+              Iqra Model High School
+            </h1>
+
+            <p>
+              School Management Administration
+            </p>
+          </div>
+
+          <div className="admin-profile">
+            <div className="online-dot"></div>
+
+            <div>
+              <strong>
+                Administrator
+              </strong>
+
+              <small>
+                Online
+              </small>
+            </div>
+          </div>
+
+        </header>
+
+        {/* MESSAGE */}
+        {message && (
+          <div className="admin-message">
+            {message}
+          </div>
+        )}
+
+        {/* =================================================
+            DASHBOARD
+        ================================================= */}
+
+        {activeTab === "Dashboard" && (
+          <section>
+
+            <div className="welcome-card">
+
+              <div>
+                <span>
+                  👋 Welcome Back
+                </span>
+
+                <h2>
+                  School Administrator
+                </h2>
+
+                <p>
+                  Manage your complete school
+                  system from one place.
+                </p>
+              </div>
+
+              <div className="welcome-icon">
+                🏫
+              </div>
+
+            </div>
+
+            {/* STATS */}
+
+            <div className="admin-stats">
+
+              <div className="stat-card">
+                <span>👨‍🎓</span>
+                <div>
+                  <small>
+                    Students
+                  </small>
+                  <strong>
+                    {students.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>👨‍🏫</span>
+                <div>
+                  <small>
+                    Teachers
+                  </small>
+                  <strong>
+                    {teachers.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>📚</span>
+                <div>
+                  <small>
+                    Assignments
+                  </small>
+                  <strong>
+                    {assignments.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>📈</span>
+                <div>
+                  <small>
+                    Results
+                  </small>
+                  <strong>
+                    {results.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>📅</span>
+                <div>
+                  <small>
+                    Attendance
+                  </small>
+                  <strong>
+                    {attendance.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>📢</span>
+                <div>
+                  <small>
+                    Announcements
+                  </small>
+                  <strong>
+                    {announcements.length}
+                  </strong>
+                </div>
+              </div>
+
+            </div>
+
+            {/* QUICK ACTIONS */}
+
+            <div className="admin-card">
+
+              <div className="section-heading">
+
+                <div>
+                  <h2>
+                    ⚡ Quick Actions
+                  </h2>
+
+                  <p>
+                    Frequently used school
+                    management actions.
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="quick-actions">
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Students");
+                    openAddStudent();
+                  }}
+                >
+                  👨‍🎓 Add Student
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Teachers");
+                    openAddTeacher();
+                  }}
+                >
+                  👨‍🏫 Add Teacher
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Assignments");
+                    openAddAssignment();
+                  }}
+                >
+                  📚 Add Assignment
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Results");
+                    openAddResult();
+                  }}
+                >
+                  📈 Add Result
+                </button>
+
+                {/* IMPORTANT ATTENDANCE BUTTON */}
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Attendance");
+                    openAddAttendance();
+                  }}
+                >
+                  📅 Mark Attendance
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab("Announcements");
+                    openAddAnnouncement();
+                  }}
+                >
+                  📢 New Announcement
+                </button>
+
+              </div>
+
+            </div>
+
+            {/* SCHOOL INFO */}
+
+            <div className="admin-card">
+
+              <h2>
+                🏫 School Information
+              </h2>
+
+              <div className="school-info-grid">
+
+                <div>
+                  <span>
+                    School Name
+                  </span>
+                  <strong>
+                    Iqra Model High School
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    System
+                  </span>
+                  <strong>
+                    School LMS
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Students
+                  </span>
+                  <strong>
+                    {students.length}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Teachers
+                  </span>
+                  <strong>
+                    {teachers.length}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            STUDENTS
+        ================================================= */}
+
+        {activeTab === "Students" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  👨‍🎓 Students Management
+                </h2>
+
+                <p>
+                  Add, edit, delete and search
+                  students.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddStudent}
+              >
+                ➕ Add Student
+              </button>
+
+            </div>
+
+            {showStudentForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveStudent}
+              >
+
+                <h3>
+                  {editingStudent
+                    ? "✏️ Edit Student"
+                    : "➕ Add Student"}
+                </h3>
+
+                <div className="form-grid">
+
+                  <input
+                    placeholder="Student Name"
+                    value={studentForm.name}
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Father Name"
+                    value={
+                      studentForm.father_name
+                    }
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        father_name:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Class"
+                    value={
+                      studentForm.class_name
+                    }
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        class_name:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Roll Number"
+                    value={
+                      studentForm.roll_number
+                    }
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        roll_number:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                  <input
+                    placeholder="Student Code"
+                    value={
+                      studentForm.student_code
+                    }
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        student_code:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                  <input
+                    placeholder="Phone"
+                    value={
+                      studentForm.phone
+                    }
+                    onChange={(e) =>
+                      setStudentForm({
+                        ...studentForm,
+                        phone:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                </div>
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾{" "}
+                    {editingStudent
+                      ? "Update Student"
+                      : "Save Student"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowStudentForm(false)
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="search-box">
+              🔎
+              <input
+                placeholder="Search students..."
+                value={searchStudent}
+                onChange={(e) =>
+                  setSearchStudent(
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="table-card">
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Father</th>
+                    <th>Class</th>
+                    <th>Roll</th>
+                    <th>Code</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredStudents.map(
+                    (student) => (
+                      <tr key={student.id}>
+
+                        <td>
+                          {student.id}
+                        </td>
+
+                        <td>
+                          <strong>
+                            {student.name}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {student.father_name}
+                        </td>
+
+                        <td>
+                          {student.class_name}
+                        </td>
+
+                        <td>
+                          {student.roll_number}
+                        </td>
+
+                        <td>
+                          {student.student_code}
+                        </td>
+
+                        <td>
+                          {student.phone}
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditStudent(
+                                student
+                              )
+                            }
+                          >
+                            ✏️
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteStudent(
+                                student.id
+                              )
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+
+                </tbody>
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            TEACHERS
+        ================================================= */}
+
+        {activeTab === "Teachers" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  👨‍🏫 Teachers Management
+                </h2>
+
+                <p>
+                  Add, edit, delete and search
+                  teachers.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddTeacher}
+              >
+                ➕ Add Teacher
+              </button>
+
+            </div>
+
+            {showTeacherForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveTeacher}
+              >
+
+                <h3>
+                  {editingTeacher
+                    ? "✏️ Edit Teacher"
+                    : "➕ Add Teacher"}
+                </h3>
+
+                <div className="form-grid">
+
+                  <input
+                    placeholder="Teacher Name"
+                    value={teacherForm.name}
+                    onChange={(e) =>
+                      setTeacherForm({
+                        ...teacherForm,
+                        name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Subject"
+                    value={
+                      teacherForm.subject
+                    }
+                    onChange={(e) =>
+                      setTeacherForm({
+                        ...teacherForm,
+                        subject:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Phone"
+                    value={teacherForm.phone}
+                    onChange={(e) =>
+                      setTeacherForm({
+                        ...teacherForm,
+                        phone:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                </div>
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾{" "}
+                    {editingTeacher
+                      ? "Update Teacher"
+                      : "Save Teacher"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowTeacherForm(false)
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="search-box">
+              🔎
+
+              <input
+                placeholder="Search teachers..."
+                value={searchTeacher}
+                onChange={(e) =>
+                  setSearchTeacher(
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="table-card">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Subject</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredTeachers.map(
+                    (teacher) => (
+                      <tr key={teacher.id}>
+
+                        <td>
+                          {teacher.id}
+                        </td>
+
+                        <td>
+                          <strong>
+                            {teacher.name}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {teacher.subject}
+                        </td>
+
+                        <td>
+                          {teacher.phone}
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditTeacher(
+                                teacher
+                              )
+                            }
+                          >
+                            ✏️
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteTeacher(
+                                teacher.id
+                              )
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            ASSIGNMENTS
+        ================================================= */}
+
+        {activeTab === "Assignments" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  📚 Assignments Management
+                </h2>
+
+                <p>
+                  Create and manage student
+                  assignments.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={
+                  openAddAssignment
+                }
+              >
+                ➕ Add Assignment
+              </button>
+
+            </div>
+
+            {showAssignmentForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveAssignment}
+              >
+
+                <h3>
+                  ➕ New Assignment
+                </h3>
+
+                <div className="form-grid">
+
+                  <input
+                    placeholder="Assignment Title"
+                    value={
+                      assignmentForm.title
+                    }
+                    onChange={(e) =>
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        title:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Subject"
+                    value={
+                      assignmentForm.subject
+                    }
+                    onChange={(e) =>
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        subject:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    type="date"
+                    value={
+                      assignmentForm.due_date
+                    }
+                    onChange={(e) =>
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        due_date:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                  <select
+                    value={
+                      assignmentForm.student_id
+                    }
+                    onChange={(e) =>
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        student_id:
+                          e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">
+                      All Students
+                    </option>
+
+                    {students.map(
+                      (student) => (
+                        <option
+                          key={student.id}
+                          value={
+                            student.id
+                          }
+                        >
+                          {student.name} -{" "}
+                          {student.class_name}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setAssignmentFile(
+                        e.target.files[0]
+                      )
+                    }
+                  />
+
+                </div>
+
+                <textarea
+                  placeholder="Assignment Description"
+                  value={
+                    assignmentForm.description
+                  }
+                  onChange={(e) =>
+                    setAssignmentForm({
+                      ...assignmentForm,
+                      description:
+                        e.target.value,
+                    })
+                  }
+                />
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾 Save Assignment
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowAssignmentForm(
+                        false
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="search-box">
+              🔎
+
+              <input
+                placeholder="Search assignments..."
+                value={
+                  searchAssignment
+                }
+                onChange={(e) =>
+                  setSearchAssignment(
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="table-card">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Subject</th>
+                    <th>Student</th>
+                    <th>Due Date</th>
+                    <th>File</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredAssignments.map(
+                    (item) => (
+                      <tr key={item.id}>
+
+                        <td>
+                          {item.id}
+                        </td>
+
+                        <td>
+                          <strong>
+                            {item.title}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {item.subject}
+                        </td>
+
+                        <td>
+                          {item.student_name ||
+                            "All Students"}
+                        </td>
+
+                        <td>
+                          {item.due_date}
+                        </td>
+
+                        <td>
+                          {item.file ? (
+                            <a
+                              href={`${API}/uploads/${item.file}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📎 View
+                            </a>
+                          ) : (
+                            "No File"
+                          )}
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteAssignment(
+                                item.id
+                              )
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            RESULTS
+        ================================================= */}
+
+        {activeTab === "Results" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  📈 Results Management
+                </h2>
+
+                <p>
+                  Add, edit and delete student
+                  results.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddResult}
+              >
+                ➕ Add Result
+              </button>
+
+            </div>
+
+            {showResultForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveResult}
+              >
+
+                <h3>
+                  {editingResult
+                    ? "✏️ Edit Result"
+                    : "➕ Add Result"}
+                </h3>
+
+                <div className="form-grid">
+
+                  <select
+                    value={
+                      resultForm.student_id
+                    }
+                    onChange={(e) =>
+                      setResultForm({
+                        ...resultForm,
+                        student_id:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="">
+                      Select Student
+                    </option>
+
+                    {students.map(
+                      (student) => (
+                        <option
+                          key={student.id}
+                          value={
+                            student.id
+                          }
+                        >
+                          {student.name} -{" "}
+                          {student.class_name}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                  <input
+                    placeholder="Subject"
+                    value={
+                      resultForm.subject
+                    }
+                    onChange={(e) =>
+                      setResultForm({
+                        ...resultForm,
+                        subject:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Marks"
+                    value={
+                      resultForm.marks
+                    }
+                    onChange={(e) =>
+                      setResultForm({
+                        ...resultForm,
+                        marks:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Total Marks"
+                    value={
+                      resultForm.total_marks
+                    }
+                    onChange={(e) =>
+                      setResultForm({
+                        ...resultForm,
+                        total_marks:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <input
+                    placeholder="Grade"
+                    value={
+                      resultForm.grade
+                    }
+                    onChange={(e) =>
+                      setResultForm({
+                        ...resultForm,
+                        grade:
+                          e.target.value,
+                      })
+                    }
+                  />
+
+                </div>
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾{" "}
+                    {editingResult
+                      ? "Update Result"
+                      : "Save Result"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowResultForm(false)
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="search-box">
+              🔎
+
+              <input
+                placeholder="Search results..."
+                value={searchResult}
+                onChange={(e) =>
+                  setSearchResult(
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="table-card">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredResults.map(
+                    (result) => (
+                      <tr key={result.id}>
+
+                        <td>
+                          {result.id}
+                        </td>
+
+                        <td>
+                          {result.student_name}
+                        </td>
+
+                        <td>
+                          {result.subject}
+                        </td>
+
+                        <td>
+                          {result.marks}
+                        </td>
+
+                        <td>
+                          {result.total_marks}
+                        </td>
+
+                        <td>
+                          {result.grade}
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditResult(
+                                result
+                              )
+                            }
+                          >
+                            ✏️
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteResult(
+                                result.id
+                              )
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            ATTENDANCE
+        ================================================= */}
+
+        {activeTab === "Attendance" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  📅 Attendance Management
+                </h2>
+
+                <p>
+                  Mark, edit, search and
+                  manage student attendance.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={
+                  openAddAttendance
+                }
+              >
+                ➕ Mark Attendance
+              </button>
+
+            </div>
+
+            {/* ATTENDANCE SUMMARY */}
+
+            <div className="admin-stats">
+
+              <div className="stat-card">
+                <span>📅</span>
+                <div>
+                  <small>
+                    Total Records
+                  </small>
+                  <strong>
+                    {attendance.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>✅</span>
+                <div>
+                  <small>
+                    Present
+                  </small>
+                  <strong>
+                    {presentCount}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>❌</span>
+                <div>
+                  <small>
+                    Absent
+                  </small>
+                  <strong>
+                    {absentCount}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <span>⏰</span>
+                <div>
+                  <small>
+                    Late
+                  </small>
+                  <strong>
+                    {lateCount}
+                  </strong>
+                </div>
+              </div>
+
+            </div>
+
+            {/* ATTENDANCE FORM */}
+
+            {showAttendanceForm && (
+              <form
+                className="student-form-card"
+                onSubmit={
+                  saveAttendance
+                }
+              >
+
+                <h3>
+                  {editingAttendance
+                    ? "✏️ Edit Attendance"
+                    : "📅 Mark Attendance"}
+                </h3>
+
+                <div className="form-grid">
+
+                  <select
+                    value={
+                      attendanceForm.student_id
+                    }
+                    onChange={(e) =>
+                      setAttendanceForm({
+                        ...attendanceForm,
+                        student_id:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="">
+                      Select Student
+                    </option>
+
+                    {students.map(
+                      (student) => (
+                        <option
+                          key={student.id}
+                          value={
+                            student.id
+                          }
+                        >
+                          {student.name}
+                          {" - "}
+                          {student.class_name}
+                          {" - Roll "}
+                          {student.roll_number}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                  <input
+                    type="date"
+                    value={
+                      attendanceForm.attendance_date
+                    }
+                    onChange={(e) =>
+                      setAttendanceForm({
+                        ...attendanceForm,
+                        attendance_date:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <select
+                    value={
+                      attendanceForm.status
+                    }
+                    onChange={(e) =>
+                      setAttendanceForm({
+                        ...attendanceForm,
+                        status:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="Present">
+                      ✅ Present
+                    </option>
+
+                    <option value="Absent">
+                      ❌ Absent
+                    </option>
+
+                    <option value="Late">
+                      ⏰ Late
+                    </option>
+
+                  </select>
+
+                </div>
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾{" "}
+                    {editingAttendance
+                      ? "Update Attendance"
+                      : "Save Attendance"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowAttendanceForm(
+                        false
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            {/* SEARCH */}
+
+            <div className="search-box">
+
+              🔎
+
+              <input
+                placeholder="Search attendance..."
+                value={
+                  searchAttendance
+                }
+                onChange={(e) =>
+                  setSearchAttendance(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            {/* TABLE */}
+
+            <div className="table-card">
+
+              <table>
+
+                <thead>
+
+                  <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Roll</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {filteredAttendance.map(
+                    (item) => (
+                      <tr key={item.id}>
+
+                        <td>
+                          {item.id}
+                        </td>
+
+                        <td>
+                          <strong>
+                            {item.student_name ||
+                              "Unknown"}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {item.class_name}
+                        </td>
+
+                        <td>
+                          {item.roll_number}
+                        </td>
+
+                        <td>
+                          {item.attendance_date
+                            ? String(
+                                item.attendance_date
+                              ).split("T")[0]
+                            : ""}
+                        </td>
+
+                        <td>
+
+                          <span
+                            className={
+                              item.status ===
+                              "Present"
+                                ? "status-present"
+                                : item.status ===
+                                  "Absent"
+                                ? "status-absent"
+                                : "status-late"
+                            }
+                          >
+                            {item.status ===
+                              "Present" &&
+                              "✅ "}
+                            {item.status ===
+                              "Absent" &&
+                              "❌ "}
+                            {item.status ===
+                              "Late" &&
+                              "⏰ "}
+
+                            {item.status}
+                          </span>
+
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditAttendance(
+                                item
+                              )
+                            }
+                          >
+                            ✏️
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteAttendance(
+                                item.id
+                              )
+                            }
+                          >
+                            🗑️
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            ANNOUNCEMENTS
+        ================================================= */}
+
+        {activeTab === "Announcements" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>
+                  📢 Announcements
+                </h2>
+
+                <p>
+                  Manage school announcements.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={
+                  openAddAnnouncement
+                }
+              >
+                ➕ New Announcement
+              </button>
+
+            </div>
+
+            {showAnnouncementForm && (
+              <form
+                className="student-form-card"
+                onSubmit={
+                  saveAnnouncement
+                }
+              >
+
+                <h3>
+                  {editingAnnouncement
+                    ? "✏️ Edit Announcement"
+                    : "📢 New Announcement"}
+                </h3>
+
+                <input
+                  placeholder="Announcement Title"
+                  value={
+                    announcementForm.title
+                  }
+                  onChange={(e) =>
+                    setAnnouncementForm({
+                      ...announcementForm,
+                      title:
+                        e.target.value,
+                    })
+                  }
+                  required
+                />
+
+                <textarea
+                  placeholder="Announcement Message"
+                  value={
+                    announcementForm.message
+                  }
+                  onChange={(e) =>
+                    setAnnouncementForm({
+                      ...announcementForm,
+                      message:
+                        e.target.value,
+                    })
+                  }
+                  required
+                />
+
+                <div className="form-buttons">
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    💾{" "}
+                    {editingAnnouncement
+                      ? "Update Announcement"
+                      : "Save Announcement"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      setShowAnnouncementForm(
+                        false
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="search-box">
+
+              🔎
+
+              <input
+                placeholder="Search announcements..."
+                value={
+                  searchAnnouncement
+                }
+                onChange={(e) =>
+                  setSearchAnnouncement(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            <div className="announcement-grid">
+
+              {filteredAnnouncements.map(
+                (item) => (
+                  <div
+                    className="announcement-card"
+                    key={item.id}
+                  >
+
+                    <div className="announcement-icon">
+                      📢
+                    </div>
+
+                    <div>
+
+                      <h3>
+                        {item.title}
+                      </h3>
+
+                      <p>
+                        {item.message}
+                      </p>
+
+                      <div className="announcement-actions">
+
+                        <button
+                          className="edit-button"
+                          onClick={() =>
+                            openEditAnnouncement(
+                              item
+                            )
+                          }
+                        >
+                          ✏️ Edit
+                        </button>
+
+                        <button
+                          className="delete-button"
+                          onClick={() =>
+                            deleteAnnouncement(
+                              item.id
+                            )
+                          }
+                        >
+                          🗑️ Delete
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                )
+              )}
+
+            </div>
+
+          </section>
+        )}
+
+      </main>
+
+    </div>
+  );
+}
+
+export default Admin;

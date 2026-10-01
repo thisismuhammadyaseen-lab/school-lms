@@ -1,0 +1,594 @@
+
+.results-page {
+  padding: 30px;
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #1e293b;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.results-small-title {
+  margin: 0 0 5px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.results-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.results-header p {
+  margin: 7px 0 0;
+  color: #64748b;
+}
+
+.student-result-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 15px 20px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+.student-result-info strong {
+  font-size: 17px;
+}
+
+.student-result-info span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Marksheet */
+
+.marksheet {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 15px 45px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.marksheet-school-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 110px;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 25px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.school-logo-box {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: #f1f5f9;
+  font-size: 35px;
+  border: 1px solid #e2e8f0;
+}
+
+.school-heading h1 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.school-heading p {
+  margin: 5px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.school-heading span {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #475569;
+}
+
+.school-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+}
+
+.school-badge span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.school-badge strong {
+  margin-top: 5px;
+  font-size: 22px;
+}
+
+/* Student Information */
+
+.student-information {
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 17px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.student-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.info-item {
+  padding: 14px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.info-item span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.info-item strong {
+  font-size: 15px;
+}
+
+/* Summary */
+
+.result-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.result-summary-card {
+  padding: 20px;
+  border-radius: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.result-summary-card span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.result-summary-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+/* Results Card */
+
+.results-card {
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: white;
+}
+
+.results-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.results-card-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.results-card-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.results-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results-table th,
+.results-table td {
+  padding: 15px 13px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.results-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.results-table td {
+  font-size: 14px;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.results-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Percentage */
+
+.percentage-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 130px;
+}
+
+.percentage-bar {
+  width: 75px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e2e8f0;
+}
+
+.percentage-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #475569;
+  transition: width 0.3s ease;
+}
+
+.percentage-cell span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Grade */
+
+.grade-badge {
+  display: inline-flex;
+  min-width: 38px;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  font-weight: 800;
+}
+
+/* Status */
+
+.result-status {
+  display: inline-flex;
+  padding: 6px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.result-status.passed {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.result-status.failed {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* Final Result */
+
+.final-result-box {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.final-result-box > div {
+  text-align: center;
+}
+
+.final-result-box span {
+  display: block;
+  margin-bottom: 7px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.final-result-box strong {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+/* Note */
+
+.result-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.result-note > span {
+  font-size: 20px;
+}
+
+.result-note strong {
+  font-size: 14px;
+}
+
+.result-note p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Signature */
+
+.signature-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  margin-top: 60px;
+  padding: 0 50px;
+}
+
+.signature-box {
+  text-align: center;
+}
+
+.signature-box div {
+  height: 1px;
+  margin-bottom: 10px;
+  background: #334155;
+}
+
+.signature-box span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* Print */
+
+.print-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.print-button {
+  border: none;
+  border-radius: 10px;
+  padding: 13px 24px;
+  background: #1e293b;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.print-button:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* Loading */
+
+.results-state {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.results-state h3 {
+  margin: 10px 0;
+}
+
+.results-state p {
+  color: #64748b;
+}
+
+.results-loader {
+  width: 35px;
+  height: 35px;
+  margin: 0 auto 15px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #475569;
+  border-radius: 50%;
+  animation: resultSpin 0.8s linear infinite;
+}
+
+@keyframes resultSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-result-icon {
+  font-size: 45px;
+}
+
+/* Mobile */
+
+@media (max-width: 900px) {
+  .student-info-grid,
+  .result-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .marksheet-school-header {
+    grid-template-columns: 65px 1fr;
+  }
+
+  .school-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .results-page {
+    padding: 15px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-result-info {
+    align-items: flex-start;
+  }
+
+  .marksheet {
+    padding: 15px;
+    border-radius: 14px;
+  }
+
+  .marksheet-school-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .school-logo-box {
+    margin: 0 auto;
+  }
+
+  .student-info-grid,
+  .result-summary-grid,
+  .final-result-box {
+    grid-template-columns: 1fr;
+  }
+
+  .signature-area {
+    gap: 50px;
+    padding: 0 10px;
+  }
+}
+
+/* Print styling */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .results-page {
+    padding: 0;
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .marksheet {
+    max-width: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .marksheet-school-header {
+    border-bottom: 2px solid #000;
+  }
+
+  .student-information,
+  .result-summary-card,
+  .results-card,
+  .final-result-box,
+  .result-note {
+    break-inside: avoid;
+  }
+
+  .results-table th,
+  .results-table td {
+    border-color: #999;
+  }
+
+  .percentage-fill {
+    background: #555 !important;
+  }
+
+  .print-button {
+    display: none;
+  }
+}

@@ -1,0 +1,2411 @@
+
+import { useEffect, useState } from "react";
+import "./Admin.css";
+
+function Admin({ onLogout }) {
+  const [activeTab, setActiveTab] = useState("Dashboard");
+
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [results, setResults] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [assignmentForm, setAssignmentForm] = useState({
+    student_name: "",
+    subject: "",
+    file: null,
+  });
+
+  const [message, setMessage] = useState("");
+
+  // ==============================
+  // STUDENTS
+  // ==============================
+  const [searchStudent, setSearchStudent] = useState("");
+  const [showStudentForm, setShowStudentForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+
+  const [studentForm, setStudentForm] = useState({
+    name: "",
+    father_name: "",
+    class_name: "",
+    roll_number: "",
+    student_code: "",
+    phone: "",
+  });
+
+  // ==============================
+  // TEACHERS
+  // ==============================
+  const [searchTeacher, setSearchTeacher] = useState("");
+  const [showTeacherForm, setShowTeacherForm] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+
+  const [teacherForm, setTeacherForm] = useState({
+    name: "",
+    subject: "",
+    phone: "",
+  });
+
+  // ==============================
+  // RESULTS
+  // ==============================
+  const [searchResult, setSearchResult] = useState("");
+  const [showResultForm, setShowResultForm] = useState(false);
+  const [editingResult, setEditingResult] = useState(null);
+
+  const [resultForm, setResultForm] = useState({
+    student_name: "",
+    subject: "",
+    marks: "",
+  });
+
+  // ==============================
+  // ANNOUNCEMENTS
+  // ==============================
+  const [showAnnouncementForm, setShowAnnouncementForm] =
+    useState(false);
+
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState(null);
+
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: "",
+    message: "",
+  });
+
+  // ==============================
+  // LOAD ALL DATA
+  // ==============================
+  useEffect(() => {
+    loadStudents();
+    loadTeachers();
+    loadAssignments();
+    loadResults();
+    loadAnnouncements();
+  }, []);
+
+  // ==============================
+  // STUDENTS API
+  // ==============================
+  const loadStudents = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/students"
+      );
+
+      if (!response.ok) {
+        throw new Error("Students loading failed");
+      }
+
+      const data = await response.json();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Students error:", error);
+    }
+  };
+
+  const handleStudentChange = (e) => {
+    const { name, value } = e.target;
+
+    setStudentForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const openAddStudent = () => {
+    setEditingStudent(null);
+
+    setStudentForm({
+      name: "",
+      father_name: "",
+      class_name: "",
+      roll_number: "",
+      student_code: "",
+      phone: "",
+    });
+
+    setShowStudentForm(true);
+  };
+
+  const openEditStudent = (student) => {
+    setEditingStudent(student);
+
+    setStudentForm({
+      name: student.name || "",
+      father_name: student.father_name || "",
+      class_name: student.class_name || "",
+      roll_number: student.roll_number || "",
+      student_code: student.student_code || "",
+      phone: student.phone || "",
+    });
+
+    setShowStudentForm(true);
+  };
+
+  const saveStudent = async (e) => {
+    e.preventDefault();
+
+    if (!studentForm.name.trim()) {
+      setMessage("Student name is required.");
+      return;
+    }
+
+    try {
+      const url = editingStudent
+        ? `http://localhost:5000/students/${editingStudent.id}`
+        : "http://localhost:5000/students";
+
+      const method = editingStudent ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(studentForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Student save failed");
+      }
+
+      setMessage(
+        editingStudent
+          ? "Student updated successfully."
+          : "Student added successfully."
+      );
+
+      setShowStudentForm(false);
+      setEditingStudent(null);
+
+      setStudentForm({
+        name: "",
+        father_name: "",
+        class_name: "",
+        roll_number: "",
+        student_code: "",
+        phone: "",
+      });
+
+      loadStudents();
+    } catch (error) {
+      console.error("Save student error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const deleteStudent = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this student?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/students/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Delete failed");
+      }
+
+      setMessage("Student deleted successfully.");
+      loadStudents();
+    } catch (error) {
+      console.error("Delete student error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const filteredStudents = students.filter((student) => {
+    const search = searchStudent.toLowerCase();
+
+    return (
+      String(student.name || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(student.father_name || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(student.class_name || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(student.roll_number || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(student.student_code || "")
+        .toLowerCase()
+        .includes(search)
+    );
+  });
+
+  // ==============================
+  // TEACHERS API
+  // ==============================
+  const loadTeachers = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/teachers"
+      );
+
+      if (!response.ok) {
+        throw new Error("Teachers loading failed");
+      }
+
+      const data = await response.json();
+      setTeachers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Teachers error:", error);
+    }
+  };
+
+  const handleTeacherChange = (e) => {
+    const { name, value } = e.target;
+
+    setTeacherForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const openAddTeacher = () => {
+    setEditingTeacher(null);
+
+    setTeacherForm({
+      name: "",
+      subject: "",
+      phone: "",
+    });
+
+    setShowTeacherForm(true);
+  };
+
+  const openEditTeacher = (teacher) => {
+    setEditingTeacher(teacher);
+
+    setTeacherForm({
+      name: teacher.name || "",
+      subject: teacher.subject || "",
+      phone: teacher.phone || "",
+    });
+
+    setShowTeacherForm(true);
+  };
+
+  const saveTeacher = async (e) => {
+    e.preventDefault();
+
+    if (!teacherForm.name.trim()) {
+      setMessage("Teacher name is required.");
+      return;
+    }
+
+    try {
+      const url = editingTeacher
+        ? `http://localhost:5000/teachers/${editingTeacher.id}`
+        : "http://localhost:5000/teachers";
+
+      const method = editingTeacher ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(teacherForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Teacher save failed");
+      }
+
+      setMessage(
+        editingTeacher
+          ? "Teacher updated successfully."
+          : "Teacher added successfully."
+      );
+
+      setShowTeacherForm(false);
+      setEditingTeacher(null);
+
+      setTeacherForm({
+        name: "",
+        subject: "",
+        phone: "",
+      });
+
+      loadTeachers();
+    } catch (error) {
+      console.error("Save teacher error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const deleteTeacher = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this teacher?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/teachers/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Delete failed");
+      }
+
+      setMessage("Teacher deleted successfully.");
+      loadTeachers();
+    } catch (error) {
+      console.error("Delete teacher error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const filteredTeachers = teachers.filter((teacher) => {
+    const search = searchTeacher.toLowerCase();
+
+    return (
+      String(teacher.name || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(teacher.subject || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(teacher.phone || "")
+        .toLowerCase()
+        .includes(search)
+    );
+  });
+
+  // ==============================
+  // ASSIGNMENTS API
+  // ==============================
+  const loadAssignments = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/assignments"
+      );
+
+      if (!response.ok) {
+        throw new Error("Assignments loading failed");
+      }
+
+      const data = await response.json();
+      setAssignments(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Assignments error:", error);
+      setAssignments([]);
+    }
+  };
+
+  const openAddAssignment = () => {
+    setAssignmentForm({
+      student_name: "",
+      subject: "",
+      file: null,
+    });
+    setShowAssignmentForm(true);
+  };
+
+  const handleAssignmentChange = (e) => {
+    const { name, value, files } = e.target;
+    setAssignmentForm((prev) => ({
+      ...prev,
+      [name]: name === "file" ? files[0] : value,
+    }));
+  };
+
+  const saveAssignment = async (e) => {
+    e.preventDefault();
+
+    if (!assignmentForm.student_name) {
+      setMessage("Please select a student.");
+      return;
+    }
+
+    if (!assignmentForm.subject.trim()) {
+      setMessage("Please enter subject.");
+      return;
+    }
+
+    if (!assignmentForm.file) {
+      setMessage("Please select a file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("student_name", assignmentForm.student_name);
+    formData.append("subject", assignmentForm.subject.trim());
+    formData.append("file", assignmentForm.file);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/admin/assignments",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add assignment.");
+      }
+
+      setMessage("Assignment added successfully.");
+      setShowAssignmentForm(false);
+      setAssignmentForm({
+        student_name: "",
+        subject: "",
+        file: null,
+      });
+      loadAssignments();
+    } catch (error) {
+      console.error("Save assignment error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const deleteAssignment = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this assignment?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/assignments/${id}`,
+        { method: "DELETE" }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Delete assignment failed.");
+      }
+
+      setMessage("Assignment deleted successfully.");
+      loadAssignments();
+    } catch (error) {
+      console.error("Delete assignment error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  // ==============================
+  // RESULTS API
+  // ==============================
+  const loadResults = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/results"
+      );
+
+      if (!response.ok) {
+        throw new Error("Results loading failed");
+      }
+
+      const data = await response.json();
+      setResults(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Results error:", error);
+      setResults([]);
+    }
+  };
+
+  const handleResultChange = (e) => {
+    const { name, value } = e.target;
+
+    setResultForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const openAddResult = () => {
+    setEditingResult(null);
+
+    setResultForm({
+      student_name: "",
+      subject: "",
+      marks: "",
+    });
+
+    setShowResultForm(true);
+  };
+
+  const openEditResult = (result) => {
+    setEditingResult(result);
+
+    setResultForm({
+      student_name:
+        result.student_name ||
+        result.name ||
+        "",
+      subject: result.subject || "",
+      marks: result.marks ?? "",
+    });
+
+    setShowResultForm(true);
+  };
+
+  const saveResult = async (e) => {
+    e.preventDefault();
+
+    if (!resultForm.student_name.trim()) {
+      setMessage("Please select a student.");
+      return;
+    }
+
+    if (!resultForm.subject.trim()) {
+      setMessage("Please enter subject.");
+      return;
+    }
+
+    if (
+      resultForm.marks === "" ||
+      resultForm.marks === null ||
+      resultForm.marks === undefined
+    ) {
+      setMessage("Please enter marks.");
+      return;
+    }
+
+    const numericMarks = Number(resultForm.marks);
+
+    if (
+      Number.isNaN(numericMarks) ||
+      numericMarks < 0 ||
+      numericMarks > 100
+    ) {
+      setMessage("Marks must be between 0 and 100.");
+      return;
+    }
+
+    try {
+      const url = editingResult
+        ? `http://localhost:5000/results/${editingResult.id}`
+        : "http://localhost:5000/results";
+
+      const method = editingResult ? "PUT" : "POST";
+
+      const body = {
+        student_name: resultForm.student_name,
+        subject: resultForm.subject,
+        marks: numericMarks,
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Result save failed");
+      }
+
+      setMessage(
+        editingResult
+          ? "Result updated successfully."
+          : "Result added successfully."
+      );
+
+      setShowResultForm(false);
+      setEditingResult(null);
+
+      setResultForm({
+        student_name: "",
+        subject: "",
+        marks: "",
+      });
+
+      loadResults();
+    } catch (error) {
+      console.error("Save result error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const deleteResult = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this result?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/results/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Delete failed");
+      }
+
+      setMessage("Result deleted successfully.");
+      loadResults();
+    } catch (error) {
+      console.error("Delete result error:", error);
+      setMessage(error.message);
+    }
+  };
+
+  const getResultPercentage = (marks) => {
+    return Number(marks || 0).toFixed(1);
+  };
+
+  const getResultGrade = (marks) => {
+    const numericMarks = Number(marks || 0);
+
+    if (numericMarks >= 80) return "A+";
+    if (numericMarks >= 70) return "A";
+    if (numericMarks >= 60) return "B";
+    if (numericMarks >= 50) return "C";
+    if (numericMarks >= 40) return "D";
+
+    return "F";
+  };
+
+  const filteredResults = results.filter((result) => {
+    const search = searchResult.toLowerCase();
+
+    return (
+      String(result.student_name || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(result.subject || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(result.marks || "")
+        .toLowerCase()
+        .includes(search)
+    );
+  });
+
+  // ==============================
+  // ANNOUNCEMENTS API
+  // ==============================
+  const loadAnnouncements = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/announcements"
+      );
+
+      if (!response.ok) {
+        throw new Error("Announcements loading failed");
+      }
+
+      const data = await response.json();
+
+      setAnnouncements(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Announcements error:", error);
+      setAnnouncements([]);
+    }
+  };
+
+  const handleAnnouncementChange = (e) => {
+    const { name, value } = e.target;
+
+    setAnnouncementForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const openAddAnnouncement = () => {
+    setEditingAnnouncement(null);
+
+    setAnnouncementForm({
+      title: "",
+      message: "",
+    });
+
+    setShowAnnouncementForm(true);
+  };
+
+  const openEditAnnouncement = (announcement) => {
+    setEditingAnnouncement(announcement);
+
+    setAnnouncementForm({
+      title: announcement.title || "",
+      message: announcement.message || "",
+    });
+
+    setShowAnnouncementForm(true);
+  };
+
+  const saveAnnouncement = async (e) => {
+    e.preventDefault();
+
+    if (!announcementForm.title.trim()) {
+      setMessage("Announcement title is required.");
+      return;
+    }
+
+    if (!announcementForm.message.trim()) {
+      setMessage("Announcement message is required.");
+      return;
+    }
+
+    try {
+      const url = editingAnnouncement
+        ? `http://localhost:5000/announcements/${editingAnnouncement.id}`
+        : "http://localhost:5000/announcements";
+
+      const method = editingAnnouncement ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(announcementForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Announcement save failed"
+        );
+      }
+
+      setMessage(
+        editingAnnouncement
+          ? "Announcement updated successfully."
+          : "Announcement added successfully."
+      );
+
+      setShowAnnouncementForm(false);
+      setEditingAnnouncement(null);
+
+      setAnnouncementForm({
+        title: "",
+        message: "",
+      });
+
+      loadAnnouncements();
+    } catch (error) {
+      console.error(
+        "Save announcement error:",
+        error
+      );
+
+      setMessage(error.message);
+    }
+  };
+
+  const deleteAnnouncement = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this announcement?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/announcements/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Delete announcement failed"
+        );
+      }
+
+      setMessage(
+        "Announcement deleted successfully."
+      );
+
+      loadAnnouncements();
+    } catch (error) {
+      console.error(
+        "Delete announcement error:",
+        error
+      );
+
+      setMessage(error.message);
+    }
+  };
+
+  // ==============================
+  // MENU
+  // ==============================
+  const menuItems = [
+    "Dashboard",
+    "Students",
+    "Teachers",
+    "Assignments",
+    "Results",
+    "Announcements",
+  ];
+
+  const getPageTitle = () => {
+    if (activeTab === "Dashboard") return "Dashboard";
+    if (activeTab === "Students") return "Students Management";
+    if (activeTab === "Teachers") return "Teachers Management";
+    if (activeTab === "Assignments")
+      return "Assignments Management";
+    if (activeTab === "Results") return "Results Management";
+    if (activeTab === "Announcements")
+      return "Announcements";
+
+    return activeTab;
+  };
+
+  return (
+    <div className="admin-page">
+
+      {/* SIDEBAR */}
+      <aside className="admin-sidebar">
+
+        <div className="admin-logo">
+          <div className="logo-icon">🏫</div>
+
+          <div>
+            <h2>Iqra Model</h2>
+            <span>High School</span>
+          </div>
+        </div>
+
+        <div className="admin-profile">
+          <div className="profile-avatar">👨‍🏫</div>
+
+          <div>
+            <strong>Administrator</strong>
+            <span>School Admin</span>
+          </div>
+        </div>
+
+        <nav className="admin-nav">
+
+          {menuItems.map((item) => (
+            <button
+              key={item}
+              className={`admin-nav-item ${
+                activeTab === item ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveTab(item);
+                setMessage("");
+              }}
+            >
+              <span>
+                {item === "Dashboard" && "📊"}
+                {item === "Students" && "👨‍🎓"}
+                {item === "Teachers" && "👨‍🏫"}
+                {item === "Assignments" && "📝"}
+                {item === "Results" && "📈"}
+                {item === "Announcements" && "📢"}
+              </span>
+
+              {item}
+            </button>
+          ))}
+
+        </nav>
+
+        <button
+          className="admin-logout"
+          onClick={onLogout}
+        >
+          🚪 Logout
+        </button>
+
+      </aside>
+
+      {/* MAIN */}
+      <main className="admin-main">
+
+        <header className="admin-header">
+
+          <div>
+            <h1>{getPageTitle()}</h1>
+            <p>
+              Iqra Model High School Administration
+            </p>
+          </div>
+
+          <div className="online-status">
+            <span className="online-dot"></span>
+            Online
+          </div>
+
+        </header>
+
+        {message && (
+          <div className="admin-message">
+            {message}
+
+            <button
+              onClick={() => setMessage("")}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* DASHBOARD */}
+        {activeTab === "Dashboard" && (
+          <>
+            <section className="welcome-card">
+
+              <div>
+                <span className="welcome-label">
+                  ADMINISTRATOR PANEL
+                </span>
+
+                <h2>
+                  Welcome to School Management System
+                </h2>
+
+                <p>
+                  Manage students, teachers,
+                  assignments, results and
+                  announcements from one
+                  professional dashboard.
+                </p>
+              </div>
+
+              <div className="welcome-icon">
+                🏫
+              </div>
+
+            </section>
+
+            <section className="stats-grid">
+
+              <div className="stat-card">
+                <div className="stat-icon">👨‍🎓</div>
+
+                <div>
+                  <span>Total Students</span>
+                  <strong>{students.length}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">👨‍🏫</div>
+
+                <div>
+                  <span>Total Teachers</span>
+                  <strong>{teachers.length}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">📝</div>
+
+                <div>
+                  <span>Assignments</span>
+                  <strong>{assignments.length}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">📊</div>
+
+                <div>
+                  <span>Results</span>
+                  <strong>{results.length}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">📢</div>
+
+                <div>
+                  <span>Announcements</span>
+                  <strong>{announcements.length}</strong>
+                </div>
+              </div>
+
+            </section>
+
+            <section className="dashboard-grid">
+
+              <div className="dashboard-info-card">
+
+                <div className="card-heading">
+                  <h3>School Information</h3>
+                  <span>🏫</span>
+                </div>
+
+                <div className="info-row">
+                  <span>School Name</span>
+                  <strong>
+                    Iqra Model High School
+                  </strong>
+                </div>
+
+                <div className="info-row">
+                  <span>System</span>
+                  <strong>School LMS</strong>
+                </div>
+
+                <div className="info-row">
+                  <span>Status</span>
+                  <strong className="status-active">
+                    Active
+                  </strong>
+                </div>
+
+              </div>
+
+              <div className="dashboard-info-card">
+
+                <div className="card-heading">
+                  <h3>Quick Actions</h3>
+                  <span>⚡</span>
+                </div>
+
+                <div className="quick-actions">
+
+                  <button onClick={openAddStudent}>
+                    ➕ Add Student
+                  </button>
+
+                  <button onClick={openAddTeacher}>
+                    ➕ Add Teacher
+                  </button>
+
+                  <button onClick={openAddResult}>
+                    📊 Add Result
+                  </button>
+
+                  <button onClick={openAddAnnouncement}>
+                    📢 Add Announcement
+                  </button>
+
+                </div>
+
+              </div>
+
+            </section>
+          </>
+        )}
+
+        {/* STUDENTS */}
+        {activeTab === "Students" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>Students Management</h2>
+                <p>
+                  Add, edit, search and manage students.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddStudent}
+              >
+                ➕ Add Student
+              </button>
+
+            </div>
+
+            <div className="student-tools">
+
+              <input
+                type="text"
+                className="student-search"
+                placeholder="🔍 Search student..."
+                value={searchStudent}
+                onChange={(e) =>
+                  setSearchStudent(e.target.value)
+                }
+              />
+
+              <span className="management-count">
+                {filteredStudents.length} Students
+              </span>
+
+            </div>
+
+            {showStudentForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveStudent}
+              >
+
+                <div className="student-form-header">
+
+                  <h3>
+                    {editingStudent
+                      ? "Edit Student"
+                      : "Add New Student"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowStudentForm(false);
+                      setEditingStudent(null);
+                    }}
+                  >
+                    ×
+                  </button>
+
+                </div>
+
+                <div className="student-form-grid">
+
+                  <div className="form-group">
+                    <label>Student Name</label>
+
+                    <input
+                      name="name"
+                      value={studentForm.name}
+                      onChange={handleStudentChange}
+                      placeholder="Enter student name"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Father Name</label>
+
+                    <input
+                      name="father_name"
+                      value={studentForm.father_name}
+                      onChange={handleStudentChange}
+                      placeholder="Enter father name"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Class</label>
+
+                    <input
+                      name="class_name"
+                      value={studentForm.class_name}
+                      onChange={handleStudentChange}
+                      placeholder="e.g. 9th"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Roll Number</label>
+
+                    <input
+                      name="roll_number"
+                      value={studentForm.roll_number}
+                      onChange={handleStudentChange}
+                      placeholder="Enter roll number"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Student Code</label>
+
+                    <input
+                      name="student_code"
+                      value={studentForm.student_code}
+                      onChange={handleStudentChange}
+                      placeholder="Enter student code"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Phone</label>
+
+                    <input
+                      name="phone"
+                      value={studentForm.phone}
+                      onChange={handleStudentChange}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                </div>
+
+                <div className="student-form-actions">
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowStudentForm(false);
+                      setEditingStudent(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    {editingStudent
+                      ? "Update Student"
+                      : "Save Student"}
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="management-table-card">
+
+              <table className="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Father Name</th>
+                    <th>Class</th>
+                    <th>Roll No</th>
+                    <th>Code</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="8"
+                        className="empty-table"
+                      >
+                        No students found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((student) => (
+                      <tr key={student.id}>
+
+                        <td>#{student.id}</td>
+
+                        <td>
+                          <div className="table-person">
+
+                            <div className="person-avatar">
+                              {String(
+                                student.name || "S"
+                              )
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+
+                            <strong>
+                              {student.name}
+                            </strong>
+
+                          </div>
+                        </td>
+
+                        <td>
+                          {student.father_name || "-"}
+                        </td>
+
+                        <td>
+                          <span className="class-badge">
+                            {student.class_name || "-"}
+                          </span>
+                        </td>
+
+                        <td>
+                          {student.roll_number || "-"}
+                        </td>
+
+                        <td>
+                          {student.student_code || "-"}
+                        </td>
+
+                        <td>
+                          {student.phone || "-"}
+                        </td>
+
+                        <td>
+
+                          <div className="table-actions">
+
+                            <button
+                              className="edit-button"
+                              onClick={() =>
+                                openEditStudent(student)
+                              }
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              className="delete-button"
+                              onClick={() =>
+                                deleteStudent(student.id)
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+                    ))
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* TEACHERS */}
+        {activeTab === "Teachers" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>Teachers Management</h2>
+                <p>
+                  Manage school teachers and subjects.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddTeacher}
+              >
+                ➕ Add Teacher
+              </button>
+
+            </div>
+
+            <div className="student-tools">
+
+              <input
+                type="text"
+                className="student-search"
+                placeholder="🔍 Search teacher..."
+                value={searchTeacher}
+                onChange={(e) =>
+                  setSearchTeacher(e.target.value)
+                }
+              />
+
+              <span className="management-count">
+                {filteredTeachers.length} Teachers
+              </span>
+
+            </div>
+
+            {showTeacherForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveTeacher}
+              >
+
+                <div className="student-form-header">
+
+                  <h3>
+                    {editingTeacher
+                      ? "Edit Teacher"
+                      : "Add New Teacher"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTeacherForm(false);
+                      setEditingTeacher(null);
+                    }}
+                  >
+                    ×
+                  </button>
+
+                </div>
+
+                <div className="student-form-grid">
+
+                  <div className="form-group">
+                    <label>Teacher Name</label>
+
+                    <input
+                      name="name"
+                      value={teacherForm.name}
+                      onChange={handleTeacherChange}
+                      placeholder="Enter teacher name"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Subject</label>
+
+                    <input
+                      name="subject"
+                      value={teacherForm.subject}
+                      onChange={handleTeacherChange}
+                      placeholder="e.g. Mathematics"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Phone</label>
+
+                    <input
+                      name="phone"
+                      value={teacherForm.phone}
+                      onChange={handleTeacherChange}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                </div>
+
+                <div className="student-form-actions">
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowTeacherForm(false);
+                      setEditingTeacher(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    {editingTeacher
+                      ? "Update Teacher"
+                      : "Save Teacher"}
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="management-table-card">
+
+              <table className="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Teacher</th>
+                    <th>Subject</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredTeachers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="empty-table"
+                      >
+                        No teachers found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTeachers.map((teacher) => (
+                      <tr key={teacher.id}>
+
+                        <td>#{teacher.id}</td>
+
+                        <td>
+                          <div className="table-person">
+
+                            <div className="person-avatar teacher-avatar">
+                              {String(
+                                teacher.name || "T"
+                              )
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+
+                            <strong>
+                              {teacher.name}
+                            </strong>
+
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="subject-badge">
+                            {teacher.subject || "-"}
+                          </span>
+                        </td>
+
+                        <td>
+                          {teacher.phone || "-"}
+                        </td>
+
+                        <td>
+
+                          <div className="table-actions">
+
+                            <button
+                              className="edit-button"
+                              onClick={() =>
+                                openEditTeacher(teacher)
+                              }
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              className="delete-button"
+                              onClick={() =>
+                                deleteTeacher(teacher.id)
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+                    ))
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* ASSIGNMENTS */}
+        {activeTab === "Assignments" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>Assignments</h2>
+                <p>
+                  View all uploaded student assignments.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  className="add-student-button"
+                  onClick={openAddAssignment}
+                >
+                  ➕ Add Assignment
+                </button>
+                <span className="management-count">
+                  {assignments.length} Assignments
+                </span>
+              </div>
+
+            </div>
+
+            {showAssignmentForm && (
+              <form className="student-form-card" onSubmit={saveAssignment}>
+                <div className="student-form-header">
+                  <h3>Add New Assignment</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowAssignmentForm(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="student-form-grid">
+                  <div className="form-group">
+                    <label>Student</label>
+                    <select
+                      name="student_name"
+                      value={assignmentForm.student_name}
+                      onChange={handleAssignmentChange}
+                      required
+                    >
+                      <option value="">Select Student</option>
+                      {students.map((student) => (
+                        <option key={student.id} value={student.name}>
+                          {student.name}
+                          {student.class_name ? ` - ${student.class_name}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Subject</label>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={assignmentForm.subject}
+                      onChange={handleAssignmentChange}
+                      placeholder="e.g. Mathematics"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Assignment File</label>
+                    <input
+                      type="file"
+                      name="file"
+                      onChange={handleAssignmentChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="student-form-actions">
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => setShowAssignmentForm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="save-student-button">
+                    ➕ Add Assignment
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="management-table-card">
+
+              <table className="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Subject</th>
+                    <th>File</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {assignments.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="empty-table"
+                      >
+                        No assignments found.
+                      </td>
+                    </tr>
+                  ) : (
+                    assignments.map((assignment, index) => {
+
+                      const fileName =
+                        assignment.file_name ||
+                        assignment.filename ||
+                        "";
+
+                      const filePath =
+                        assignment.file_path ||
+                        "";
+
+                      return (
+                        <tr
+                          key={
+                            assignment.id ||
+                            assignment._id ||
+                            index
+                          }
+                        >
+
+                          <td>
+                            #{assignment.id || index + 1}
+                          </td>
+
+                          <td>
+                            <strong>
+                              {assignment.student_name ||
+                                assignment.name ||
+                                "-"}
+                            </strong>
+                          </td>
+
+                          <td>
+                            <span className="subject-badge">
+                              {assignment.subject || "-"}
+                            </span>
+                          </td>
+
+                          <td>
+
+                            {fileName ? (
+                              <a
+                                href={
+                                  filePath ||
+                                  `http://localhost:5000/uploads/${fileName}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                📎 {fileName}
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+
+                          </td>
+
+                          <td>
+                            {assignment.created_at || "-"}
+                          </td>
+
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                className="delete-button"
+                                onClick={() => deleteAssignment(assignment.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+
+                        </tr>
+                      );
+                    })
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* RESULTS */}
+        {activeTab === "Results" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>Results Management</h2>
+                <p>
+                  Add and manage student results.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddResult}
+              >
+                ➕ Add Result
+              </button>
+
+            </div>
+
+            <div className="student-tools">
+
+              <input
+                type="text"
+                className="student-search"
+                placeholder="🔍 Search result..."
+                value={searchResult}
+                onChange={(e) =>
+                  setSearchResult(e.target.value)
+                }
+              />
+
+              <span className="management-count">
+                {filteredResults.length} Results
+              </span>
+
+            </div>
+
+            {showResultForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveResult}
+              >
+
+                <div className="student-form-header">
+
+                  <h3>
+                    {editingResult
+                      ? "Edit Result"
+                      : "Add New Result"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResultForm(false);
+                      setEditingResult(null);
+                    }}
+                  >
+                    ×
+                  </button>
+
+                </div>
+
+                <div className="student-form-grid">
+
+                  <div className="form-group">
+
+                    <label>Student</label>
+
+                    <select
+                      name="student_name"
+                      value={resultForm.student_name}
+                      onChange={handleResultChange}
+                      required
+                    >
+
+                      <option value="">
+                        Select Student
+                      </option>
+
+                      {students.map((student) => (
+                        <option
+                          key={student.id}
+                          value={student.name}
+                        >
+                          {student.name}
+                          {student.class_name
+                            ? ` - ${student.class_name}`
+                            : ""}
+                        </option>
+                      ))}
+
+                    </select>
+
+                  </div>
+
+                  <div className="form-group">
+
+                    <label>Subject</label>
+
+                    <input
+                      name="subject"
+                      value={resultForm.subject}
+                      onChange={handleResultChange}
+                      placeholder="e.g. Mathematics"
+                      required
+                    />
+
+                  </div>
+
+                  <div className="form-group">
+
+                    <label>Obtained Marks</label>
+
+                    <input
+                      type="number"
+                      name="marks"
+                      value={resultForm.marks}
+                      onChange={handleResultChange}
+                      placeholder="0 - 100"
+                      min="0"
+                      max="100"
+                      required
+                    />
+
+                  </div>
+
+                  <div className="form-group">
+
+                    <label>Total Marks</label>
+
+                    <input
+                      type="number"
+                      value="100"
+                      readOnly
+                    />
+
+                  </div>
+
+                </div>
+
+                {resultForm.marks !== "" && (
+                  <div className="result-preview">
+
+                    <div>
+                      <span>Percentage</span>
+
+                      <strong>
+                        {getResultPercentage(
+                          resultForm.marks
+                        )}
+                        %
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Grade</span>
+
+                      <strong>
+                        {getResultGrade(
+                          resultForm.marks
+                        )}
+                      </strong>
+                    </div>
+
+                  </div>
+                )}
+
+                <div className="student-form-actions">
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowResultForm(false);
+                      setEditingResult(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    {editingResult
+                      ? "Update Result"
+                      : "Save Result"}
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="management-table-card">
+
+              <table className="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>Total</th>
+                    <th>Percentage</th>
+                    <th>Grade</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {filteredResults.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="8"
+                        className="empty-table"
+                      >
+                        No results found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredResults.map((result) => {
+
+                      const marks = Number(
+                        result.marks || 0
+                      );
+
+                      const percentage =
+                        getResultPercentage(marks);
+
+                      const grade =
+                        result.grade ||
+                        getResultGrade(marks);
+
+                      return (
+                        <tr key={result.id}>
+
+                          <td>#{result.id}</td>
+
+                          <td>
+                            <div className="result-student-cell">
+
+                              <div className="person-avatar result-avatar">
+                                {String(
+                                  result.student_name ||
+                                    "S"
+                                )
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </div>
+
+                              <strong>
+                                {result.student_name || "-"}
+                              </strong>
+
+                            </div>
+                          </td>
+
+                          <td>
+                            <span className="subject-badge">
+                              {result.subject || "-"}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className="marks-value">
+                              {marks}
+                            </span>
+                          </td>
+
+                          <td>100</td>
+
+                          <td>{percentage}%</td>
+
+                          <td>
+                            <span
+                              className={`grade-badge ${
+                                grade === "F"
+                                  ? "grade-f"
+                                  : ""
+                              }`}
+                            >
+                              {grade}
+                            </span>
+                          </td>
+
+                          <td>
+
+                            <div className="table-actions">
+
+                              <button
+                                className="edit-button"
+                                onClick={() =>
+                                  openEditResult(result)
+                                }
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                className="delete-button"
+                                onClick={() =>
+                                  deleteResult(result.id)
+                                }
+                              >
+                                Delete
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+                      );
+                    })
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* ==============================
+            ANNOUNCEMENTS
+        ============================== */}
+        {activeTab === "Announcements" && (
+          <section className="management-section">
+
+            <div className="management-title">
+
+              <div>
+                <h2>Announcements</h2>
+
+                <p>
+                  Add, edit, delete and manage school
+                  announcements.
+                </p>
+              </div>
+
+              <button
+                className="add-student-button"
+                onClick={openAddAnnouncement}
+              >
+                📢 Add Announcement
+              </button>
+
+            </div>
+
+            {/* ANNOUNCEMENT FORM */}
+            {showAnnouncementForm && (
+              <form
+                className="student-form-card"
+                onSubmit={saveAnnouncement}
+              >
+
+                <div className="student-form-header">
+
+                  <h3>
+                    {editingAnnouncement
+                      ? "Edit Announcement"
+                      : "Add New Announcement"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAnnouncementForm(false);
+                      setEditingAnnouncement(null);
+                    }}
+                  >
+                    ×
+                  </button>
+
+                </div>
+
+                <div className="student-form-grid">
+
+                  <div className="form-group">
+
+                    <label>Announcement Title</label>
+
+                    <input
+                      type="text"
+                      name="title"
+                      value={announcementForm.title}
+                      onChange={handleAnnouncementChange}
+                      placeholder="e.g. School Holiday"
+                      required
+                    />
+
+                  </div>
+
+                  <div className="form-group">
+
+                    <label>Message</label>
+
+                    <textarea
+                      name="message"
+                      value={announcementForm.message}
+                      onChange={handleAnnouncementChange}
+                      placeholder="Write announcement message..."
+                      rows="5"
+                      required
+                    />
+
+                  </div>
+
+                </div>
+
+                <div className="student-form-actions">
+
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowAnnouncementForm(false);
+                      setEditingAnnouncement(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="save-student-button"
+                  >
+                    {editingAnnouncement
+                      ? "Update Announcement"
+                      : "Save Announcement"}
+                  </button>
+
+                </div>
+
+              </form>
+            )}
+
+            <div className="student-tools">
+
+              <span className="management-count">
+                {announcements.length} Announcements
+              </span>
+
+            </div>
+
+            <div className="announcement-grid">
+
+              {announcements.length === 0 ? (
+
+                <div className="empty-announcement">
+
+                  <div>📢</div>
+
+                  <h3>No announcements</h3>
+
+                  <p>
+                    There are currently no school
+                    announcements.
+                  </p>
+
+                </div>
+
+              ) : (
+
+                announcements.map(
+                  (announcement, index) => (
+
+                    <div
+                      className="announcement-card"
+                      key={
+                        announcement.id ||
+                        announcement._id ||
+                        index
+                      }
+                    >
+
+                      <div className="announcement-icon">
+                        📢
+                      </div>
+
+                      <div className="announcement-content">
+
+                        <h3>
+                          {announcement.title ||
+                            "School Announcement"}
+                        </h3>
+
+                        <p>
+                          {announcement.message ||
+                            announcement.description ||
+                            ""}
+                        </p>
+
+                        <small>
+                          {announcement.created_at
+                            ? new Date(
+                                announcement.created_at
+                              ).toLocaleString()
+                            : ""}
+                        </small>
+
+                        <div className="table-actions">
+
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditAnnouncement(
+                                announcement
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              deleteAnnouncement(
+                                announcement.id
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  )
+                )
+
+              )}
+
+            </div>
+
+          </section>
+        )}
+
+        <footer className="admin-footer">
+
+          <p>
+            © 2026 Iqra Model High School.
+            All rights reserved.
+          </p>
+
+          <span>
+            School LMS Administration
+          </span>
+
+        </footer>
+
+      </main>
+
+    </div>
+  );
+}
+
+export default Admin;

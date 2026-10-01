@@ -1,0 +1,1780 @@
+
+const express = require("express");
+const cors = require("cors");
+const mysql = require("mysql2");
+const multer = require("multer");
+const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
+
+const app = express();
+
+const PORT = 5000;
+
+// ==================================================
+// MIDDLEWARE
+// ==================================================
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ==================================================
+// UPLOAD FOLDER
+// ==================================================
+
+const uploadFolder = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadFolder)) {
+  fs.mkdirSync(uploadFolder);
+}
+
+app.use(
+  "/uploads",
+  express.static(uploadFolder)
+);
+
+// ==================================================
+// MYSQL DATABASE
+// ==================================================
+
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "12345",
+  database: "school_lms",
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error(
+      "❌ Database connection failed:",
+      err.message
+    );
+    return;
+  }
+
+  console.log(
+    "✅ Database connected successfully!"
+  );
+});
+
+// ==================================================
+// HOME
+// ==================================================
+
+app.get("/", (req, res) => {
+  res.json({
+    message:
+      "LMS Backend is running successfully!",
+  });
+});
+
+// ==================================================
+// ADMIN LOGIN
+// ==================================================
+
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      message:
+        "Username and password are required",
+    });
+  }
+
+  const sql = `
+    SELECT id, username, password
+    FROM admins
+    WHERE username = ?
+  `;
+
+  db.query(
+    sql,
+    [username],
+    async (err, results) => {
+      if (err) {
+        console.error(
+          "Admin login database error:",
+          err
+        );
+
+        return res.status(500).json({
+          message: "Login server error",
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(401).json({
+          message:
+            "Invalid username or password",
+        });
+      }
+
+      const admin = results[0];
+
+      try {
+        const passwordMatch =
+          await bcrypt.compare(
+            password,
+            admin.password
+          );
+
+        if (!passwordMatch) {
+          return res.status(401).json({
+            message:
+              "Invalid username or password",
+          });
+        }
+
+        return res.json({
+          success: true,
+          message:
+            "Admin login successful",
+
+          admin: {
+            id: admin.id,
+            username: admin.username,
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Admin password checking error:",
+          error
+        );
+
+        return res.status(500).json({
+          message: "Login server error",
+        });
+      }
+    }
+  );
+});
+
+// ==================================================
+// STUDENT LOGIN
+// ==================================================
+
+app.post("/student/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      message:
+        "Username and password are required",
+    });
+  }
+
+  const sql = `
+    SELECT
+      su.id AS user_id,
+      su.username,
+      su.password,
+      su.student_id,
+
+      s.id AS student_db_id,
+      s.name,
+      s.father_name,
+      s.class_name,
+      s.roll_number,
+      s.student_code,
+      s.phone
+
+    FROM student_users su
+
+    LEFT JOIN students s
+      ON su.student_id = s.id
+
+    WHERE su.username = ?
+  `;
+
+  db.query(
+    sql,
+    [username],
+    async (err, results) => {
+      if (err) {
+        console.error(
+          "Student login database error:",
+          err
+        );
+
+        return res.status(500).json({
+          message: "Login server error",
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(401).json({
+          message:
+            "Invalid username or password",
+        });
+      }
+
+      const student = results[0];
+
+      try {
+        const passwordMatch =
+          await bcrypt.compare(
+            password,
+            student.password
+          );
+
+        if (!passwordMatch) {
+          return res.status(401).json({
+            message:
+              "Invalid username or password",
+          });
+        }
+
+        return res.json({
+          success: true,
+
+          message:
+            "Student login successful",
+
+          student: {
+            id: student.user_id,
+
+            username:
+              student.username,
+
+            student_id:
+              student.student_id,
+
+            name:
+              student.name,
+
+            father_name:
+              student.father_name,
+
+            class_name:
+              student.class_name,
+
+            roll_number:
+              student.roll_number,
+
+            student_code:
+              student.student_code,
+
+            phone:
+              student.phone,
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Student password checking error:",
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            "Login server error",
+        });
+      }
+    }
+  );
+});
+
+// ==================================================
+// MULTER UPLOAD
+// ==================================================
+
+const storage =
+  multer.diskStorage({
+    destination: function (
+      req,
+      file,
+      cb
+    ) {
+      cb(null, uploadFolder);
+    },
+
+    filename: function (
+      req,
+      file,
+      cb
+    ) {
+      const uniqueName =
+        Date.now() +
+        "-" +
+        file.originalname.replace(
+          /\s+/g,
+          "-"
+        );
+
+      cb(null, uniqueName);
+    },
+  });
+
+const upload = multer({
+  storage: storage,
+});
+
+// ==================================================
+// STUDENT ASSIGNMENT UPLOAD
+// ==================================================
+
+app.post(
+  "/upload",
+  upload.single("file"),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        message:
+          "No file selected.",
+      });
+    }
+
+    const {
+      student,
+      subject,
+      title,
+    } = req.body;
+
+    const sql = `
+      INSERT INTO assignments
+      (
+        student,
+        subject,
+        title,
+        filename
+      )
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        student ||
+          "Unknown Student",
+
+        subject ||
+          "Not specified",
+
+        title ||
+          req.file.originalname,
+
+        req.file.filename,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Assignment upload database error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Assignment upload failed.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Assignment uploaded successfully.",
+
+          id: result.insertId,
+
+          filename:
+            req.file.filename,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// GET ASSIGNMENTS
+// ==================================================
+
+app.get(
+  "/assignments",
+  (req, res) => {
+    const sql = `
+      SELECT *
+      FROM assignments
+      ORDER BY id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Assignments error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load assignments.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ==================================================
+// ADMIN ASSIGNMENT UPLOAD
+// ==================================================
+
+app.post(
+  "/admin/assignments",
+  upload.single("file"),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        message:
+          "No file selected.",
+      });
+    }
+
+    const {
+      student_name,
+      subject,
+    } = req.body;
+
+    const sql = `
+      INSERT INTO assignments
+      (
+        student,
+        subject,
+        title,
+        filename
+      )
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        student_name ||
+          "Unknown Student",
+
+        subject ||
+          "Not specified",
+
+        req.file.originalname,
+
+        req.file.filename,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Admin assignment error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Assignment upload failed.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Assignment added successfully.",
+
+          id: result.insertId,
+
+          filename:
+            req.file.filename,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// DELETE ASSIGNMENT
+// ==================================================
+
+app.delete(
+  "/assignments/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const getSql = `
+      SELECT filename
+      FROM assignments
+      WHERE id = ?
+    `;
+
+    db.query(
+      getSql,
+      [id],
+      (err, results) => {
+        if (err) {
+          console.error(err);
+
+          return res.status(500).json({
+            message:
+              "Failed to find assignment.",
+          });
+        }
+
+        if (
+          results.length > 0 &&
+          results[0].filename
+        ) {
+          const filePath =
+            path.join(
+              uploadFolder,
+              results[0].filename
+            );
+
+          if (
+            fs.existsSync(filePath)
+          ) {
+            fs.unlinkSync(filePath);
+          }
+        }
+
+        const deleteSql = `
+          DELETE FROM assignments
+          WHERE id = ?
+        `;
+
+        db.query(
+          deleteSql,
+          [id],
+          (deleteErr) => {
+            if (deleteErr) {
+              console.error(
+                deleteErr
+              );
+
+              return res
+                .status(500)
+                .json({
+                  message:
+                    "Failed to delete assignment.",
+                });
+            }
+
+            res.json({
+              success: true,
+
+              message:
+                "Assignment deleted successfully.",
+            });
+          }
+        );
+      }
+    );
+  }
+);
+
+// ==================================================
+// STUDENTS
+// ==================================================
+
+app.get(
+  "/students",
+  (req, res) => {
+    const sql = `
+      SELECT *
+      FROM students
+      ORDER BY id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Students error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load students.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ==================================================
+// ADD STUDENT
+// ==================================================
+
+app.post(
+  "/students",
+  (req, res) => {
+    const {
+      name,
+      father_name,
+      class_name,
+      roll_number,
+      student_code,
+      phone,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        message:
+          "Student name is required.",
+      });
+    }
+
+    const sql = `
+      INSERT INTO students
+      (
+        name,
+        father_name,
+        class_name,
+        roll_number,
+        student_code,
+        phone
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        name,
+        father_name || null,
+        class_name || null,
+        roll_number || null,
+        student_code || null,
+        phone || null,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Add student error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to add student.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Student added successfully.",
+
+          id: result.insertId,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// UPDATE STUDENT
+// ==================================================
+
+app.put(
+  "/students/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const {
+      name,
+      father_name,
+      class_name,
+      roll_number,
+      student_code,
+      phone,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        message:
+          "Student name is required.",
+      });
+    }
+
+    const sql = `
+      UPDATE students
+      SET
+        name = ?,
+        father_name = ?,
+        class_name = ?,
+        roll_number = ?,
+        student_code = ?,
+        phone = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [
+        name,
+        father_name || null,
+        class_name || null,
+        roll_number || null,
+        student_code || null,
+        phone || null,
+        id,
+      ],
+      (err) => {
+        if (err) {
+          console.error(
+            "Update student error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to update student.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Student updated successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// DELETE STUDENT
+// ==================================================
+
+app.delete(
+  "/students/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const sql = `
+      DELETE FROM students
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [id],
+      (err) => {
+        if (err) {
+          console.error(
+            "Delete student error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to delete student.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Student deleted successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// RESULTS
+// ==================================================
+
+app.get(
+  "/results",
+  (req, res) => {
+    const sql = `
+      SELECT *
+      FROM results
+      ORDER BY id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Results error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load results.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ==================================================
+// ADD RESULT
+// ==================================================
+
+app.post(
+  "/results",
+  (req, res) => {
+    const {
+      student_id,
+      student_name,
+      subject,
+      marks,
+      total,
+    } = req.body;
+
+    const numericMarks =
+      Number(marks);
+
+    const numericTotal =
+      Number(total) || 100;
+
+    if (
+      !student_name ||
+      !subject ||
+      isNaN(numericMarks)
+    ) {
+      return res.status(400).json({
+        message:
+          "Student, subject and marks are required.",
+      });
+    }
+
+    if (
+      numericMarks < 0 ||
+      numericMarks > numericTotal
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid marks.",
+      });
+    }
+
+    const sql = `
+      INSERT INTO results
+      (
+        student_id,
+        student_name,
+        subject,
+        marks,
+        total
+      )
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        student_id || null,
+        student_name,
+        subject,
+        numericMarks,
+        numericTotal,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Add result error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to add result.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Result added successfully.",
+
+          id: result.insertId,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// UPDATE RESULT
+// ==================================================
+
+app.put(
+  "/results/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const {
+      student_id,
+      student_name,
+      subject,
+      marks,
+      total,
+    } = req.body;
+
+    const numericMarks =
+      Number(marks);
+
+    const numericTotal =
+      Number(total) || 100;
+
+    if (
+      !student_name ||
+      !subject ||
+      isNaN(numericMarks)
+    ) {
+      return res.status(400).json({
+        message:
+          "Student, subject and marks are required.",
+      });
+    }
+
+    if (
+      numericMarks < 0 ||
+      numericMarks > numericTotal
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid marks.",
+      });
+    }
+
+    const sql = `
+      UPDATE results
+      SET
+        student_id = ?,
+        student_name = ?,
+        subject = ?,
+        marks = ?,
+        total = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [
+        student_id || null,
+        student_name,
+        subject,
+        numericMarks,
+        numericTotal,
+        id,
+      ],
+      (err) => {
+        if (err) {
+          console.error(
+            "Update result error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to update result.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Result updated successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// DELETE RESULT
+// ==================================================
+
+app.delete(
+  "/results/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const sql = `
+      DELETE FROM results
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [id],
+      (err) => {
+        if (err) {
+          console.error(
+            "Delete result error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to delete result.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Result deleted successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// TEACHERS
+// ==================================================
+
+app.get(
+  "/teachers",
+  (req, res) => {
+    const sql = `
+      SELECT *
+      FROM teachers
+      ORDER BY id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Teachers error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load teachers.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ==================================================
+// ADD TEACHER
+// ==================================================
+
+app.post(
+  "/teachers",
+  (req, res) => {
+    const {
+      name,
+      subject,
+      phone,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        message:
+          "Teacher name is required.",
+      });
+    }
+
+    const sql = `
+      INSERT INTO teachers
+      (
+        name,
+        subject,
+        phone
+      )
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        name,
+        subject || null,
+        phone || null,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Add teacher error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to add teacher.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Teacher added successfully.",
+
+          id: result.insertId,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// UPDATE TEACHER
+// ==================================================
+
+app.put(
+  "/teachers/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const {
+      name,
+      subject,
+      phone,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        message:
+          "Teacher name is required.",
+      });
+    }
+
+    const sql = `
+      UPDATE teachers
+      SET
+        name = ?,
+        subject = ?,
+        phone = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [
+        name,
+        subject || null,
+        phone || null,
+        id,
+      ],
+      (err) => {
+        if (err) {
+          console.error(
+            "Update teacher error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to update teacher.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Teacher updated successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// DELETE TEACHER
+// ==================================================
+
+app.delete(
+  "/teachers/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const sql = `
+      DELETE FROM teachers
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [id],
+      (err) => {
+        if (err) {
+          console.error(
+            "Delete teacher error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to delete teacher.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Teacher deleted successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// ATTENDANCE
+// ==================================================
+
+// GET ALL ATTENDANCE
+
+app.get(
+  "/attendance",
+  (req, res) => {
+    const sql = `
+      SELECT
+        a.id,
+        a.student_id,
+        s.name AS student_name,
+        s.class_name,
+        s.roll_number,
+        s.student_code,
+        a.attendance_date,
+        a.status,
+        a.created_at
+
+      FROM attendance a
+
+      LEFT JOIN students s
+        ON a.student_id = s.id
+
+      ORDER BY
+        a.attendance_date DESC,
+        a.id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Attendance error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load attendance.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// GET ATTENDANCE FOR ONE STUDENT
+
+app.get(
+  "/attendance/student/:studentId",
+  (req, res) => {
+    const studentId =
+      req.params.studentId;
+
+    const sql = `
+      SELECT
+        a.id,
+        a.student_id,
+        s.name AS student_name,
+        s.class_name,
+        s.roll_number,
+        s.student_code,
+        a.attendance_date,
+        a.status,
+        a.created_at
+
+      FROM attendance a
+
+      LEFT JOIN students s
+        ON a.student_id = s.id
+
+      WHERE a.student_id = ?
+
+      ORDER BY
+        a.attendance_date DESC,
+        a.id DESC
+    `;
+
+    db.query(
+      sql,
+      [studentId],
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Student attendance error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load student attendance.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ADD ATTENDANCE
+
+app.post(
+  "/attendance",
+  (req, res) => {
+    const {
+      student_id,
+      attendance_date,
+      status,
+    } = req.body;
+
+    if (
+      !student_id ||
+      !attendance_date ||
+      !status
+    ) {
+      return res.status(400).json({
+        message:
+          "Student, date and attendance status are required.",
+      });
+    }
+
+    const allowedStatus = [
+      "Present",
+      "Absent",
+      "Late",
+    ];
+
+    if (
+      !allowedStatus.includes(status)
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid attendance status.",
+      });
+    }
+
+    const sql = `
+      INSERT INTO attendance
+      (
+        student_id,
+        attendance_date,
+        status
+      )
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        student_id,
+        attendance_date,
+        status,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Add attendance error:",
+            err
+          );
+
+          if (
+            err.code ===
+            "ER_DUP_ENTRY"
+          ) {
+            return res.status(400).json({
+              message:
+                "Attendance already exists for this student on this date.",
+            });
+          }
+
+          return res.status(500).json({
+            message:
+              "Failed to add attendance.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Attendance added successfully.",
+
+          id: result.insertId,
+        });
+      }
+    );
+  }
+);
+
+// UPDATE ATTENDANCE
+
+app.put(
+  "/attendance/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const {
+      student_id,
+      attendance_date,
+      status,
+    } = req.body;
+
+    if (
+      !student_id ||
+      !attendance_date ||
+      !status
+    ) {
+      return res.status(400).json({
+        message:
+          "Student, date and attendance status are required.",
+      });
+    }
+
+    const allowedStatus = [
+      "Present",
+      "Absent",
+      "Late",
+    ];
+
+    if (
+      !allowedStatus.includes(status)
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid attendance status.",
+      });
+    }
+
+    const sql = `
+      UPDATE attendance
+      SET
+        student_id = ?,
+        attendance_date = ?,
+        status = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [
+        student_id,
+        attendance_date,
+        status,
+        id,
+      ],
+      (err) => {
+        if (err) {
+          console.error(
+            "Update attendance error:",
+            err
+          );
+
+          if (
+            err.code ===
+            "ER_DUP_ENTRY"
+          ) {
+            return res.status(400).json({
+              message:
+                "Attendance already exists for this student on this date.",
+            });
+          }
+
+          return res.status(500).json({
+            message:
+              "Failed to update attendance.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Attendance updated successfully.",
+        });
+      }
+    );
+  }
+);
+
+// DELETE ATTENDANCE
+
+app.delete(
+  "/attendance/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const sql = `
+      DELETE FROM attendance
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [id],
+      (err) => {
+        if (err) {
+          console.error(
+            "Delete attendance error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to delete attendance.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Attendance deleted successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// ANNOUNCEMENTS
+// ==================================================
+
+app.get(
+  "/announcements",
+  (req, res) => {
+    const sql = `
+      SELECT *
+      FROM announcements
+      ORDER BY id DESC
+    `;
+
+    db.query(
+      sql,
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Announcements error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to load announcements.",
+          });
+        }
+
+        res.json(results);
+      }
+    );
+  }
+);
+
+// ==================================================
+// ADD ANNOUNCEMENT
+// ==================================================
+
+app.post(
+  "/announcements",
+  (req, res) => {
+    const {
+      title,
+      message,
+    } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({
+        message:
+          "Title and message are required.",
+      });
+    }
+
+    const sql = `
+      INSERT INTO announcements
+      (
+        title,
+        message
+      )
+      VALUES (?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        title,
+        message,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Add announcement error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to add announcement.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Announcement added successfully.",
+
+          id: result.insertId,
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// UPDATE ANNOUNCEMENT
+// ==================================================
+
+app.put(
+  "/announcements/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const {
+      title,
+      message,
+    } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({
+        message:
+          "Title and message are required.",
+      });
+    }
+
+    const sql = `
+      UPDATE announcements
+      SET
+        title = ?,
+        message = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [
+        title,
+        message,
+        id,
+      ],
+      (err) => {
+        if (err) {
+          console.error(
+            "Update announcement error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to update announcement.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Announcement updated successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// DELETE ANNOUNCEMENT
+// ==================================================
+
+app.delete(
+  "/announcements/:id",
+  (req, res) => {
+    const id = req.params.id;
+
+    const sql = `
+      DELETE FROM announcements
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [id],
+      (err) => {
+        if (err) {
+          console.error(
+            "Delete announcement error:",
+            err
+          );
+
+          return res.status(500).json({
+            message:
+              "Failed to delete announcement.",
+          });
+        }
+
+        res.json({
+          success: true,
+
+          message:
+            "Announcement deleted successfully.",
+        });
+      }
+    );
+  }
+);
+
+// ==================================================
+// START SERVER
+// ==================================================
+
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      `🚀 LMS Backend running on http://localhost:${PORT}`
+    );
+  }
+);
